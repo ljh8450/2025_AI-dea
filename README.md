@@ -1,71 +1,88 @@
-# Getting Started with Create React App
+# 📡 On_AIr — 교내 AI 채널
 
-This project was bootstrapped with [Create React App](https://github.com/facebook/create-react-app).
+## 개요
 
-## Available Scripts
+학생들이 AI를 통해 질문하고, 학급·학교·전국 단위의 관심사 트렌드를 확인하며
+유사 질문과 추천 질문을 받아볼 수 있는 **AI 소통·분석 플랫폼**입니다.
 
-In the project directory, you can run:
+- 🗨 AI 대화 + 유사 질문 추천
+- 📈 학급/학교/전국 단위 트렌드 분석
+- 🎯 카테고리별 질문 추천
+- 🧠 AI 리터러시 체험 (Spot the Lie / Model Compare)
+- 🏫 학교·학년·반별 트렌드 조회 가능
 
-### `npm start`
+---
 
-Runs the app in the development mode.\
-Open [http://localhost:3000](http://localhost:3000) to view it in your browser.
+## ⚙ 실행 환경
 
-The page will reload when you make changes.\
-You may also see any lint errors in the console.
+- **백엔드**: Python 3.10+ / Flask
+- **프론트엔드**: Node.js 18+ / React (CRA)
+- **DB**: JSON 파일 저장 방식 (`data/logs.json` 등)
 
-### `npm test`
+---
 
-Launches the test runner in the interactive watch mode.\
-See the section about [running tests](https://facebook.github.io/create-react-app/docs/running-tests) for more information.
+## 📂 디렉토리 구조
 
-### `npm run build`
+project-root/
+├─ back/ # Flask 백엔드
+│ ├─ app.py
+│ ├─ services/
+│ └─ venv/ # 가상환경 (로컬에서 생성)
+├─ front/ # React 프론트엔드
+│ ├─ src/
+│ └─ package.json
+└─ data/ # 로그 및 분석 데이터
+├─ logs.json
+└─ literacy_logs.json
 
-Builds the app for production to the `build` folder.\
-It correctly bundles React in production mode and optimizes the build for the best performance.
+---
 
-The build is minified and the filenames include the hashes.\
-Your app is ready to be deployed!
+## 🚀 실행 방법
 
-See the section about [deployment](https://facebook.github.io/create-react-app/docs/deployment) for more information.
+### 1) 백엔드 실행
 
-### `npm run eject`
+```bash
+# 프로젝트 루트에서 back 폴더로 이동
+cd back
 
-**Note: this is a one-way operation. Once you `eject`, you can't go back!**
+# 가상환경 생성 (최초 1회)
+python -m venv venv
 
-If you aren't satisfied with the build tool and configuration choices, you can `eject` at any time. This command will remove the single build dependency from your project.
+# 가상환경 활성화
+# Windows (PowerShell)
+.\venv\Scripts\Activate
+# Mac/Linux
+source venv/bin/activate
 
-Instead, it will copy all the configuration files and the transitive dependencies (webpack, Babel, ESLint, etc) right into your project so you have full control over them. All of the commands except `eject` will still work, but they will point to the copied scripts so you can tweak them. At this point you're on your own.
+# 필요한 라이브러리 설치
+pip install -r requirements.txt
 
-You don't have to ever use `eject`. The curated feature set is suitable for small and middle deployments, and you shouldn't feel obligated to use this feature. However we understand that this tool wouldn't be useful if you couldn't customize it when you are ready for it.
+# 서버 실행
+python app.py
 
-## Learn More
+```
 
-You can learn more in the [Create React App documentation](https://facebook.github.io/create-react-app/docs/getting-started).
+### 2) 백엔드 실행
 
-To learn React, check out the [React documentation](https://reactjs.org/).
+```bash
 
-### Code Splitting
+# 프로젝트 루트에서 front 폴더로 이동
+cd front
 
-This section has moved here: [https://facebook.github.io/create-react-app/docs/code-splitting](https://facebook.github.io/create-react-app/docs/code-splitting)
+# 라이브러리 설치
+npm install
 
-### Analyzing the Bundle Size
+# 개발 서버 실행
+npm start
 
-This section has moved here: [https://facebook.github.io/create-react-app/docs/analyzing-the-bundle-size](https://facebook.github.io/create-react-app/docs/analyzing-the-bundle-size)
 
-### Making a Progressive Web App
+```
 
-This section has moved here: [https://facebook.github.io/create-react-app/docs/making-a-progressive-web-app](https://facebook.github.io/create-react-app/docs/making-a-progressive-web-app)
+### 3) 발급된 openai api key입력
 
-### Advanced Configuration
+```python
 
-This section has moved here: [https://facebook.github.io/create-react-app/docs/advanced-configuration](https://facebook.github.io/create-react-app/docs/advanced-configuration)
+# project_root/back/.env
+OPENAI_API_KEY=your_openai_api_key_here
 
-### Deployment
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/deployment](https://facebook.github.io/create-react-app/docs/deployment)
-
-### `npm run build` fails to minify
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/troubleshooting#npm-run-build-fails-to-minify](https://facebook.github.io/create-react-app/docs/troubleshooting#npm-run-build-fails-to-minify)
-# 2025_AI-dea
+```
