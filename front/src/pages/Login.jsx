@@ -1,37 +1,41 @@
-import React, { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import React, { useState } from 'react'
+import { useNavigate } from 'react-router-dom'
 
 const Login = () => {
-  const [username, setUsername] = useState('');
-  const navigate = useNavigate();
+  const navigate = useNavigate()
+  const [username, setUsername] = useState(localStorage.getItem('username') || '')
+  const [school, setSchool] = useState(localStorage.getItem('school') || '')
+  const [grade, setGrade] = useState(localStorage.getItem('grade') || '')
+  const [klass, setKlass] = useState(localStorage.getItem('class') || '')
 
   const handleLogin = () => {
-    if (username.trim()) {
-      localStorage.setItem('username', username);
-      navigate('/main');
-    }
-  };
+    if (!username.trim()) return alert('이름을 입력해주세요')
+    localStorage.setItem('username', username.trim())
+    localStorage.setItem('school', school.trim())
+    localStorage.setItem('grade', grade.trim())
+    localStorage.setItem('class', klass.trim())
+    navigate('/main')
+  }
 
   return (
-    <div className="flex flex-col items-center justify-center h-screen bg-white px-4">
-      <div className="max-w-md w-full">
-        <h2 className="text-2xl font-bold text-center mb-6">👤 이름을 입력하세요</h2>
-        <input
-          type="text"
-          className="w-full border border-gray-300 p-3 rounded-md mb-4 focus:outline-none focus:ring focus:ring-blue-200"
-          placeholder="예: 2학년3반 김지훈"
-          value={username}
-          onChange={(e) => setUsername(e.target.value)}
-        />
-        <button
-          onClick={handleLogin}
-          className="w-full bg-blue-500 text-white py-3 rounded-md hover:bg-blue-600 transition"
-        >
-          입장하기
+    <div className="min-h-screen bg-blue-50 flex items-center justify-center">
+      <div className="bg-white p-6 rounded shadow w-full max-w-md">
+        <h1 className="text-xl font-bold mb-4 text-center">로그인</h1>
+        <input className="border p-2 rounded w-full mb-2" placeholder="이름"
+          value={username} onChange={e=>setUsername(e.target.value)} />
+        <input className="border p-2 rounded w-full mb-2" placeholder="학교"
+          value={school} onChange={e=>setSchool(e.target.value)} />
+        <div className="flex gap-2">
+          <input className="border p-2 rounded w-1/2" placeholder="학년"
+            value={grade} onChange={e=>setGrade(e.target.value)} />
+          <input className="border p-2 rounded w-1/2" placeholder="반"
+            value={klass} onChange={e=>setKlass(e.target.value)} />
+        </div>
+        <button className="mt-4 bg-blue-600 text-white w-full py-2 rounded" onClick={handleLogin}>
+          시작하기
         </button>
       </div>
     </div>
-  );
-};
-
-export default Login;
+  )
+}
+export default Login
