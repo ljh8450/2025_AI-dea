@@ -6,10 +6,12 @@ import SimilarList from '../components/SimilarList'
 import SuggestedList from '../components/SuggestedList'
 import TrendScopeSelector from '../components/TrendScopeSelector'
 import Header from '../components/Header'
+import ChatHistory from '../components/ChatHistory'
 import axios from 'axios'
 
 const Main = () => {
   const [input, setInput] = useState('')
+  const [history, setHistory] = useState([]) // [{role: 'user'|'ai', content: string}]
   const [response, setResponse] = useState('')
   const [trend, setTrend] = useState([])
   const [similar, setSimilar] = useState([])
@@ -18,21 +20,28 @@ const Main = () => {
   const [scope, setScope] = useState({ level: 'all' })
 
   const handleSubmit = async () => {
+    if (!input.trim()) return
+
+    const meta = {
+      school: localStorage.getItem('school') || '',
+      grade:  localStorage.getItem('grade') || '',
+      class:  localStorage.getItem('class') || '',
+    }
+
     try {
-      const meta = {
-        school: localStorage.getItem('school') || '',
-        grade:  localStorage.getItem('grade') || '',
-        class:  localStorage.getItem('class') || '',
-      }
+      // 서버 요청 전에 사용자 메시지를 먼저 보여줌
+      setHistory(prev => [...prev, { role: 'user', content: input }])
+
       const res = await axios.post('http://localhost:5000/api/query', { message: input, ...meta })
-      setResponse(res.data.answer)
-      setSimilar(res.data.similar_questions || [])
-      const nx = await axios.post('http://localhost:5000/api/recommend/next', { message: input })
-      setNextSuggestions(nx.data.items || [])
+
+      // 응답 메시지만 추가
+      setHistory(prev => [...prev, { role: 'assistant', content: res.data.answer }])
+      setInput('')  // 입력창 초기화
     } catch (err) {
       console.error(err)
     }
   }
+
 
   const handlePickSuggestion = (q) => {
     setInput(q)
@@ -68,11 +77,11 @@ const Main = () => {
       <Header />
       <div className="p-6 max-w-3xl mx-auto">
         <QueryInput input={input} setInput={setInput} onSubmit={handleSubmit} />
-        <AIResponse response={response} />
+        <ChatHistory history={history} />
         <SimilarList items={similar} />
         <SuggestedList title="➡️ 다음에 이렇게 물어보면 좋아요" items={nextSuggestions} onPick={handlePickSuggestion} />
       </div>
-      <div className="p-6 max-w-3xl mx-auto bg-red-50 pb-14 border border-gray-200">
+      <div className="p-6 max-w-3xl mx-auto bg-re d-50 pb-14 border border-gray-200">
         <TrendScopeSelector scope={scope} setScope={setScope} />
         <TrendList trend={trend} onSelectCategory={handleSelectCategory} />
         <SuggestedList title="📚 선택한 카테고리의 추천 질문" items={categorySuggestions} onPick={handlePickSuggestion} />
