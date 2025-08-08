@@ -571,6 +571,26 @@ def literacy_leaderboard():
     ranking.sort(key=lambda x: (-x["avg_score"], -x["plays"], x["user_id"]))
     return jsonify({"items": ranking[:top]}), 200
 
+#----Side Bar Chat List Delete
+@app.post("/api/chat/delete")
+def api_chat_delete():
+    data = request.get_json() or {}
+    chat_id = (data.get("chat_id") or "").strip()
+    if not chat_id:
+        return jsonify({"ok": False, "error": "chat_id required"}), 400
+
+    path = _chat_path(chat_id)
+    if not os.path.exists(path):
+        return jsonify({"ok": False, "error": "not found"}), 404
+
+    try:
+        os.remove(path)
+        return jsonify({"ok": True}), 200
+    except Exception as e:
+        traceback.print_exc()
+        return jsonify({"ok": False, "error": str(e)}), 500
+    
+    
 if __name__ == "__main__":
     _ensure_file(LOG_PATH, [])
     _ensure_file(LIT_PATH, [])

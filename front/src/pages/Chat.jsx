@@ -61,6 +61,34 @@ const isApiErrorText = (text = '') => {
 const friendlyAnswer = () =>
   '⚠️ API 오류가 발생했습니다. 브라우저 콘솔을 확인해 주세요. 고친 뒤 아래 “다시 시도”를 눌러 동일 질문을 재전송할 수 있어요.';
 
+// ── 메시지로 제목 만들기 ─────────────────────────────
+const titleFromMessage = (msg) => {
+  const s = (msg || '').trim().replace(/\s+/g, ' ');
+  if (!s) return '새 채팅';
+  const split = s.split(/(?<=[.?!])\s|\n/); // 문장 끝/줄바꿈 기준
+  const firstSentence = split[0] || s;
+  const title = firstSentence.slice(0, 24);
+  return title || '새 채팅';
+};
+
+// ── 삭제 확인 모달 ────────────────────────────────────
+const ConfirmDialog = ({ open, title, message, confirmText = '예, 삭제', cancelText = '취소', onConfirm, onCancel }) => {
+  if (!open) return null;
+  return (
+    <div className="fixed inset-0 z-40 flex items-center justify-center">
+      <div className="absolute inset-0 bg-black/40" onClick={onCancel} />
+      <div className="relative z-50 w-full max-w-md bg-white rounded-xl shadow-lg p-5">
+        <h3 className="text-lg font-semibold mb-2">{title}</h3>
+        <p className="text-sm text-gray-700 mb-4 whitespace-pre-line">{message}</p>
+        <div className="flex justify-end gap-2">
+          <button onClick={onCancel} className="px-4 py-2 rounded border hover:bg-gray-50">{cancelText}</button>
+          <button onClick={onConfirm} className="px-4 py-2 rounded bg-red-600 text-white hover:bg-red-700">{confirmText}</button>
+        </div>
+      </div>
+    </div>
+  );
+};
+
 // ── 메인 컴포넌트 ─────────────────────────────────────
 const Chat = () => {
   const [input, setInput] = useState('');
@@ -70,6 +98,11 @@ const Chat = () => {
   const [chats, setChats] = useState([]);             // [{chat_id, title}]
   const [selectedId, setSelectedId] = useState(null); // 현재 선택 세션
   const [lastFailedMsg, setLastFailedMsg] = useState(null); // 에러 시 직전 질문 저장
+
+  // 삭제 모달 상태
+  const [confirmOpen, setConfirmOpen] = useState(false);
+  const [pendingDelete, setPendingDelete] = useState(null); // {chatId, title}
+
   const [sp] = useSearchParams();
   const bottomRef = useRef(null);
 
@@ -82,8 +115,10 @@ const Chat = () => {
       const arr = res?.data?.chats || [];
       setChats(arr);
       if (!selectedId && arr.length > 0) setSelectedId(arr[0].chat_id);
+      return arr;
     } catch (e) {
       logApi.err('/api/chat/list', e);
+      return [];
     }
   }, [selectedId]);
 
@@ -103,18 +138,23 @@ const Chat = () => {
     }
   }, []);
 
-  // ── 새 채팅 ─────────────────────────────────────────
+  // ── 새 채팅 생성 (재사용) ───────────────────────────
+  const createChat = useCallback(async (title) => {
+    logApi.req('/api/chat/create', { title });
+    const res = await axios.post(`${API_BASE}/api/chat/create`, { title });
+    logApi.res('/api/chat/create', res);
+    const newId = res?.data?.chat_id;
+    await loadChats();
+    setSelectedId(newId);
+    await loadHistory(newId);
+    return newId;
+  }, [loadChats, loadHistory]);
+
   const handleNewChat = async () => {
     const title = prompt('채팅방 제목을 입력하세요 (예: 오늘의 고민)');
     if (!title) return;
     try {
-      logApi.req('/api/chat/create', { title });
-      const res = await axios.post(`${API_BASE}/api/chat/create`, { title });
-      logApi.res('/api/chat/create', res);
-      const newId = res?.data?.chat_id;
-      await loadChats();
-      setSelectedId(newId);
-      await loadHistory(newId);
+      await createChat(title);
       setInput('');
     } catch (e) {
       logApi.err('/api/chat/create', e);
@@ -128,6 +168,37 @@ const Chat = () => {
     await loadHistory(chatId);
     setInput('');
     setLastFailedMsg(null);
+  };
+
+  // ── 삭제: 모달 열기 ─────────────────────────────────
+  const handleAskDeleteChat = (chatId, title) => {
+    setPendingDelete({ chatId, title });
+    setConfirmOpen(true);
+  };
+
+  // ── 삭제: 실제 실행 ────────────────────────────────
+  const handleDeleteChat = async () => {
+    if (!pendingDelete?.chatId) return;
+    try {
+      logApi.req('/api/chat/delete', { chat_id: pendingDelete.chatId });
+      const res = await axios.post(`${API_BASE}/api/chat/delete`, { chat_id: pendingDelete.chatId });
+      logApi.res('/api/chat/delete', res);
+
+      const arr = await loadChats();
+
+      if (selectedId === pendingDelete.chatId) {
+        const nextId = arr[0]?.chat_id || null;
+        setSelectedId(nextId);
+        if (nextId) await loadHistory(nextId);
+        else setMessages([]);
+      }
+    } catch (e) {
+      logApi.err('/api/chat/delete', e);
+      alert('삭제에 실패했어요. 콘솔을 확인해 주세요.');
+    } finally {
+      setConfirmOpen(false);
+      setPendingDelete(null);
+    }
   };
 
   // ── 프리필 ─────────────────────────────────────────
@@ -149,7 +220,8 @@ const Chat = () => {
   }, [messages]);
 
   // ── 전송 로직 (재시도에서도 재사용) ─────────────────
-  const sendMessage = async (msg) => {
+  const sendMessage = async (msg, chatIdParam) => {
+    const chatIdToUse = chatIdParam || selectedId;
     const meta = {
       school: localStorage.getItem('school') || '',
       grade:  localStorage.getItem('grade') || '',
@@ -157,7 +229,7 @@ const Chat = () => {
     };
 
     try {
-      const payload = { chat_id: selectedId, message: msg, ...meta };
+      const payload = { chat_id: chatIdToUse, message: msg, ...meta };
       logApi.req('/api/chat/send', payload);
 
       const res = await axios.post(`${API_BASE}/api/chat/send`, payload);
@@ -171,7 +243,6 @@ const Chat = () => {
       const msgs   = Array.isArray(res?.data?.messages) ? res.data.messages : [];
       const sims   = Array.isArray(res?.data?.similar_questions) ? res.data.similar_questions : [];
 
-      // 내부 에러 텍스트가 응답 본문에 섞여온 경우 사용자에게는 숨김
       if (isApiErrorText(answer)) {
         console.warn('[sanitize] 숨김 처리된 API 오류 응답:', answer);
         setMessages(prev => [...prev, { role: 'assistant', content: friendlyAnswer() }]);
@@ -195,19 +266,48 @@ const Chat = () => {
   // ── 입력창 전송 핸들러 ──────────────────────────────
   const handleSubmit = async () => {
     const msg = input.trim();
-    if (!msg || !selectedId) return;
+    if (!msg) return;
+
+    let chatIdForSend = selectedId;
+
+    // ✅ 채팅방이 없으면 자동 생성 후 그 방에 전송
+    if (!chatIdForSend) {
+      try {
+        const autoTitle = titleFromMessage(msg);
+        chatIdForSend = await createChat(autoTitle);
+      } catch (e) {
+        logApi.err('/api/chat/create(auto)', e);
+        setMessages(prev => [
+          ...prev,
+          { role: 'assistant', content: '채팅방 자동 생성에 실패했어요. 콘솔을 확인해 주세요.' }
+        ]);
+        return;
+      }
+    }
 
     // 낙관적 업데이트
     setMessages(prev => [...prev, { role: 'user', content: msg }]);
     setInput('');
 
-    await sendMessage(msg);
+    await sendMessage(msg, chatIdForSend);
   };
 
   // ── 재시도 버튼 ────────────────────────────────────
   const handleRetry = async () => {
-    if (!lastFailedMsg || !selectedId) return;
-    await sendMessage(lastFailedMsg);
+    if (!lastFailedMsg) return;
+
+    // 재시도 시에도 방이 없으면 자동 생성
+    let chatIdForSend = selectedId;
+    if (!chatIdForSend) {
+      try {
+        const autoTitle = titleFromMessage(lastFailedMsg);
+        chatIdForSend = await createChat(autoTitle);
+      } catch (e) {
+        logApi.err('/api/chat/create(auto:retry)', e);
+        return;
+      }
+    }
+    await sendMessage(lastFailedMsg, chatIdForSend);
   };
 
   // ── 레이아웃: sticky 하단 입력바(오른쪽 컬럼 내부) ──
@@ -223,6 +323,7 @@ const Chat = () => {
           selectedId={selectedId}
           onSelect={handleSelectChat}
           onNew={handleNewChat}
+          onDelete={handleAskDeleteChat}  // 삭제 아이콘 콜백
         />
 
         {/* 오른쪽 채팅 영역 */}
@@ -237,24 +338,18 @@ const Chat = () => {
             </div>
           </div>
 
-          {/* ✅ 입력바: 오른쪽 컬럼 내부 sticky 하단 */}
+          {/* 입력바: 오른쪽 컬럼 내부 sticky 하단 */}
           <div className="sticky bottom-0 z-20 border-t bg-blue-50/95 backdrop-blur">
-            {/* ✅ 에러 배너를 입력창 '바로 위'로 이동 */}
+            {/* 에러 배너(재시도) */}
             {lastFailedMsg && (
               <div className="max-w-3xl mx-auto px-4 pt-3">
                 <div className="mb-2 p-3 rounded border border-amber-300 bg-amber-50 text-amber-800 text-sm flex items-center justify-between">
                   <div>API 오류가 발생했습니다. 콘솔 확인 후 <b>다시 시도</b>를 눌러주세요.</div>
                   <div className="flex gap-2">
-                    <button
-                      onClick={handleRetry}
-                      className="px-3 py-1 rounded bg-amber-600 text-white hover:bg-amber-700"
-                    >
+                    <button onClick={handleRetry} className="px-3 py-1 rounded bg-amber-600 text-white hover:bg-amber-700">
                       다시 시도
                     </button>
-                    <button
-                      onClick={() => setLastFailedMsg(null)}
-                      className="px-3 py-1 rounded border hover:bg-amber-100"
-                    >
+                    <button onClick={() => setLastFailedMsg(null)} className="px-3 py-1 rounded border hover:bg-amber-100">
                       닫기
                     </button>
                   </div>
@@ -268,6 +363,17 @@ const Chat = () => {
           </div>
         </div>
       </div>
+
+      {/* ✅ 커스텀 삭제 모달 */}
+      <ConfirmDialog
+        open={confirmOpen}
+        title="대화 삭제"
+        message={`[${pendingDelete?.title || pendingDelete?.chatId}] 대화를 정말 삭제할까요?\n삭제 후에는 복구할 수 없습니다.`}
+        confirmText="예, 삭제"
+        cancelText="취소"
+        onConfirm={handleDeleteChat}
+        onCancel={() => { setConfirmOpen(false); setPendingDelete(null); }}
+      />
     </div>
   );
 };
