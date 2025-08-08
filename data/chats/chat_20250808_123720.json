@@ -1,0 +1,15 @@
+{
+  "chat_id": "chat_20250808_123720",
+  "title": "고민",
+  "created": "2025-08-08T12:37:20.488674Z",
+  "messages": [
+    {
+      "role": "user",
+      "content": "이건 뭐야"
+    },
+    {
+      "role": "assistant",
+      "content": "AI 응답 생성 중 오류가 발생했습니다: Error code: 401 - {'error': {'message': 'Incorrect API key provided: TYPE_YOU*_KEY. You can find your API key at https://platform.openai.com/account/api-keys.', 'type': 'invalid_request_error', 'param': None, 'code': 'invalid_api_key'}}"
+    }
+  ]
+}

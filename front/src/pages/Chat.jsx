@@ -1,43 +1,155 @@
-import React, { useState, useEffect, useRef } from 'react';
+// front/src/pages/Chat.jsx
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import Header from '../components/Header';
 import QueryInput from '../components/QueryInput';
 import ChatHistory from '../components/ChatHistory';
 import SimilarList from '../components/SimilarList';
 import SuggestedList from '../components/SuggestedList';
+import ChatListSidebar from '../components/ChatListSidebar';
 import axios from 'axios';
 import { useSearchParams } from 'react-router-dom';
 
 const API_BASE = 'http://localhost:5000';
+const DEBUG = true;
 
-// 입력바 고정 높이(패딩 계산용)
-const INPUT_BAR_H = 76; // px: 헤더 아래 고정 입력줄 높이(필요시 조정)
+// ── 디버그 로거 ───────────────────────────────────────
+const logApi = {
+  req(ep, payload) {
+    if (!DEBUG) return;
+    console.groupCollapsed(`[API:REQ] ${ep} @ ${new Date().toISOString()}`);
+    if (payload) console.log('payload:', payload);
+    console.groupEnd();
+  },
+  res(ep, res) {
+    if (!DEBUG) return;
+    console.groupCollapsed(`[API:RES] ${ep} status=${res?.status}`);
+    if (res) {
+      console.log('status:', res.status);
+      console.log('data:', res.data);
+      console.log('headers:', res.headers);
+      console.log('config:', res.config);
+    }
+    console.groupEnd();
+  },
+  err(ep, err) {
+    console.groupCollapsed(`[API:ERR] ${ep}`);
+    if (err?.response) {
+      console.error('status:', err.response.status);
+      console.error('data:', err.response.data);
+      console.error('headers:', err.response.headers);
+    } else {
+      console.error('message:', err?.message);
+    }
+    console.error('config:', err?.config);
+    console.error('stack:', err?.stack);
+    console.groupEnd();
+  }
+};
 
+// ── 에러 텍스트 마스킹 규칙 ──────────────────────────
+const isApiErrorText = (text = '') => {
+  const t = String(text).toLowerCase();
+  return (
+    t.includes('invalid_api_key') ||
+    t.includes('incorrect api key') ||
+    t.includes('you can find your api key') ||
+    t.includes('error code: 401') ||
+    t.includes('api 응답 생성 중 오류')
+  );
+};
+
+const friendlyAnswer = () =>
+  '⚠️ API 오류가 발생했습니다. 브라우저 콘솔을 확인해 주세요. 고친 뒤 아래 “다시 시도”를 눌러 동일 질문을 재전송할 수 있어요.';
+
+// ── 메인 컴포넌트 ─────────────────────────────────────
 const Chat = () => {
   const [input, setInput] = useState('');
-  const [history, setHistory] = useState([]);        // [{role, content}]
+  const [messages, setMessages] = useState([]);       // 현재 세션 히스토리
   const [similar, setSimilar] = useState([]);
   const [nextSuggestions, setNextSuggestions] = useState([]);
+  const [chats, setChats] = useState([]);             // [{chat_id, title}]
+  const [selectedId, setSelectedId] = useState(null); // 현재 선택 세션
+  const [lastFailedMsg, setLastFailedMsg] = useState(null); // 에러 시 직전 질문 저장
   const [sp] = useSearchParams();
-
   const bottomRef = useRef(null);
 
+  // ── 세션 목록 로드 ──────────────────────────────────
+  const loadChats = useCallback(async () => {
+    try {
+      logApi.req('/api/chat/list');
+      const res = await axios.get(`${API_BASE}/api/chat/list`);
+      logApi.res('/api/chat/list', res);
+      const arr = res?.data?.chats || [];
+      setChats(arr);
+      if (!selectedId && arr.length > 0) setSelectedId(arr[0].chat_id);
+    } catch (e) {
+      logApi.err('/api/chat/list', e);
+    }
+  }, [selectedId]);
+
+  // ── 특정 세션 히스토리 로드 ────────────────────────
+  const loadHistory = useCallback(async (chatId) => {
+    if (!chatId) return;
+    try {
+      logApi.req('/api/chat/history', { chat_id: chatId });
+      const res = await axios.get(`${API_BASE}/api/chat/history`, { params: { chat_id: chatId } });
+      logApi.res('/api/chat/history', res);
+      setMessages(Array.isArray(res?.data?.messages) ? res.data.messages : []);
+      setSimilar([]);
+      setNextSuggestions([]);
+    } catch (e) {
+      logApi.err('/api/chat/history', e);
+      setMessages([]);
+    }
+  }, []);
+
+  // ── 새 채팅 ─────────────────────────────────────────
+  const handleNewChat = async () => {
+    const title = prompt('채팅방 제목을 입력하세요 (예: 오늘의 고민)');
+    if (!title) return;
+    try {
+      logApi.req('/api/chat/create', { title });
+      const res = await axios.post(`${API_BASE}/api/chat/create`, { title });
+      logApi.res('/api/chat/create', res);
+      const newId = res?.data?.chat_id;
+      await loadChats();
+      setSelectedId(newId);
+      await loadHistory(newId);
+      setInput('');
+    } catch (e) {
+      logApi.err('/api/chat/create', e);
+      alert('채팅방 생성에 실패했어요. 콘솔을 확인해 주세요.');
+    }
+  };
+
+  // ── 세션 선택 ───────────────────────────────────────
+  const handleSelectChat = async (chatId) => {
+    setSelectedId(chatId);
+    await loadHistory(chatId);
+    setInput('');
+    setLastFailedMsg(null);
+  };
+
+  // ── 프리필 ─────────────────────────────────────────
   useEffect(() => {
     const pf = sp.get('prefill');
     if (pf) setInput(pf);
   }, [sp]);
 
-  // 메시지 추가/변경 시 맨 아래로 스크롤
+  // ── 초기 로딩 ───────────────────────────────────────
+  useEffect(() => { loadChats(); }, [loadChats]);
+  useEffect(() => { if (selectedId) loadHistory(selectedId); }, [selectedId, loadHistory]);
+
+  // ── 자동 스크롤 ────────────────────────────────────
   useEffect(() => {
     const id = setTimeout(() => {
       bottomRef.current?.scrollIntoView({ behavior: 'smooth', block: 'end' });
     }, 0);
     return () => clearTimeout(id);
-  }, [history]);
+  }, [messages]);
 
-  const handleSubmit = async () => {
-    const msg = input.trim();
-    if (!msg) return;
-
+  // ── 전송 로직 (재시도에서도 재사용) ─────────────────
+  const sendMessage = async (msg) => {
     const meta = {
       school: localStorage.getItem('school') || '',
       grade:  localStorage.getItem('grade') || '',
@@ -45,63 +157,115 @@ const Chat = () => {
     };
 
     try {
-      setHistory(prev => [...prev, { role: 'user', content: msg }]);
-      setInput('');
+      const payload = { chat_id: selectedId, message: msg, ...meta };
+      logApi.req('/api/chat/send', payload);
 
-      const res = await axios.post(`${API_BASE}/api/query`, { message: msg, ...meta });
-      const answer = res?.data?.answer ?? '응답을 불러오지 못했어요.';
-      const sims = res?.data?.similar_questions ?? [];
+      const res = await axios.post(`${API_BASE}/api/chat/send`, payload);
+      logApi.res('/api/chat/send', res);
 
-      setHistory(prev => [...prev, { role: 'assistant', content: answer }]);
-      setSimilar(Array.isArray(sims) ? sims : []);
+      if (!(res.status >= 200 && res.status < 300)) {
+        throw new Error(`Non-2xx status: ${res.status}`);
+      }
 
-      // (옵션) 후속 추천
-      // const nx = await axios.post(`${API_BASE}/api/recommend/next`, { message: msg });
-      // setNextSuggestions(Array.isArray(nx?.data?.items) ? nx.data.items : []);
+      const answer = res?.data?.answer ?? '';
+      const msgs   = Array.isArray(res?.data?.messages) ? res.data.messages : [];
+      const sims   = Array.isArray(res?.data?.similar_questions) ? res.data.similar_questions : [];
+
+      // 내부 에러 텍스트가 응답 본문에 섞여온 경우 사용자에게는 숨김
+      if (isApiErrorText(answer)) {
+        console.warn('[sanitize] 숨김 처리된 API 오류 응답:', answer);
+        setMessages(prev => [...prev, { role: 'assistant', content: friendlyAnswer() }]);
+        setLastFailedMsg(msg);
+        return;
+      }
+
+      setMessages(msgs);
+      setSimilar(sims);
+      setLastFailedMsg(null);
     } catch (err) {
-      console.error(err);
-      setHistory(prev => [...prev, { role: 'assistant', content: '오류가 발생했어요. 잠시 후 다시 시도해 주세요.' }]);
+      logApi.err('/api/chat/send', err);
+      setMessages(prev => [
+        ...prev,
+        { role: 'assistant', content: friendlyAnswer() }
+      ]);
+      setLastFailedMsg(msg);
     }
   };
 
-  const handlePickSuggestion = (q) => setInput(q);
+  // ── 입력창 전송 핸들러 ──────────────────────────────
+  const handleSubmit = async () => {
+    const msg = input.trim();
+    if (!msg || !selectedId) return;
 
+    // 낙관적 업데이트
+    setMessages(prev => [...prev, { role: 'user', content: msg }]);
+    setInput('');
+
+    await sendMessage(msg);
+  };
+
+  // ── 재시도 버튼 ────────────────────────────────────
+  const handleRetry = async () => {
+    if (!lastFailedMsg || !selectedId) return;
+    await sendMessage(lastFailedMsg);
+  };
+
+  // ── 레이아웃: sticky 하단 입력바(오른쪽 컬럼 내부) ──
   return (
-    <div className="min-h-screen bg-blue-50 flex flex-col">
+    <div className="min-h-screen bg-blue-50">
       <Header />
 
-      {/* 스크롤 영역: 좌측 정렬, 위에서부터 쌓이기 */}
-      <div
-        className="flex-1 overflow-y-auto"
-        style={{
-          // 입력바가 fixed라서 겹치지 않도록 아래 패딩 확보
-          paddingBottom: INPUT_BAR_H + 24, // 입력바 높이 + 여유
-        }}
-      >
-        <div className="w-full max-w-3xl mx-auto px-4 py-4">
-          {/* 메시지는 위에서부터 자연스럽게(가운데 X) */}
-          <ChatHistory history={Array.isArray(history) ? history : []} />
+      {/* 헤더(64px 가정) 아래 전체 높이 */}
+      <div className="flex h-[calc(100vh-64px)]">
+        {/* 왼쪽 사이드바 */}
+        <ChatListSidebar
+          chats={chats}
+          selectedId={selectedId}
+          onSelect={handleSelectChat}
+          onNew={handleNewChat}
+        />
 
-          {/* 유사 질문 */}
-          <SimilarList items={Array.isArray(similar) ? similar : []} />
+        {/* 오른쪽 채팅 영역 */}
+        <div className="flex-1 flex flex-col h-full">
+          {/* 스크롤 영역 */}
+          <div className="flex-1 overflow-y-auto">
+            <div className="w-full max-w-3xl mx-auto px-4 py-4">
+              <ChatHistory history={messages} />
+              <SimilarList items={similar} />
+              <SuggestedList title="➡️ 다음에 이렇게 물어보면 좋아요" items={nextSuggestions} />
+              <div ref={bottomRef} />
+            </div>
+          </div>
 
-          {/* 후속 추천 */}
-          <SuggestedList
-            title="➡️ 다음에 이렇게 물어보면 좋아요"
-            items={Array.isArray(nextSuggestions) ? nextSuggestions : []}
-          />
+          {/* ✅ 입력바: 오른쪽 컬럼 내부 sticky 하단 */}
+          <div className="sticky bottom-0 z-20 border-t bg-blue-50/95 backdrop-blur">
+            {/* ✅ 에러 배너를 입력창 '바로 위'로 이동 */}
+            {lastFailedMsg && (
+              <div className="max-w-3xl mx-auto px-4 pt-3">
+                <div className="mb-2 p-3 rounded border border-amber-300 bg-amber-50 text-amber-800 text-sm flex items-center justify-between">
+                  <div>API 오류가 발생했습니다. 콘솔 확인 후 <b>다시 시도</b>를 눌러주세요.</div>
+                  <div className="flex gap-2">
+                    <button
+                      onClick={handleRetry}
+                      className="px-3 py-1 rounded bg-amber-600 text-white hover:bg-amber-700"
+                    >
+                      다시 시도
+                    </button>
+                    <button
+                      onClick={() => setLastFailedMsg(null)}
+                      className="px-3 py-1 rounded border hover:bg-amber-100"
+                    >
+                      닫기
+                    </button>
+                  </div>
+                </div>
+              </div>
+            )}
 
-          <div ref={bottomRef} />
-        </div>
-      </div>
-
-      {/* 입력바: 항상 화면 하단에 고정 */}
-      <div
-        className="fixed left-0 right-0 bottom-20 border-t bg-blue-50/95 backdrop-blur"
-        style={{ height: INPUT_BAR_H }}
-      >
-        <div className="h-full max-w-3xl mx-auto px-4 flex items-center">
-          <QueryInput input={input} setInput={setInput} onSubmit={handleSubmit} />
+            <div className="max-w-3xl mx-auto px-4 py-3">
+              <QueryInput input={input} setInput={setInput} onSubmit={handleSubmit} />
+            </div>
+          </div>
         </div>
       </div>
     </div>

@@ -21,6 +21,111 @@ DATA_DIR = os.path.join(ROOT_DIR, "data")
 LOG_PATH = os.path.join(DATA_DIR, "logs.json")
 LIT_PATH = os.path.join(DATA_DIR, "literacy_logs.json")
 
+# === 세션(채팅방) 저장소 ===
+CHAT_DIR = os.path.join(DATA_DIR, "chats")
+os.makedirs(CHAT_DIR, exist_ok=True)
+
+def _chat_path(chat_id: str) -> str:
+    return os.path.join(CHAT_DIR, f"{chat_id}.json")
+
+def _create_chat_file(title: str) -> str:
+    ts = datetime.utcnow().strftime("%Y%m%d_%H%M%S")
+    chat_id = f"chat_{ts}"
+    doc = {
+        "chat_id": chat_id,
+        "title": (title or "새 채팅").strip(),
+        "created": datetime.utcnow().isoformat() + "Z",
+        "messages": []
+    }
+    with open(_chat_path(chat_id), "w", encoding="utf-8") as f:
+        json.dump(doc, f, ensure_ascii=False, indent=2)
+    return chat_id
+
+def _read_chat(chat_id: str) -> dict | None:
+    p = _chat_path(chat_id)
+    if not os.path.exists(p): return None
+    with open(p, "r", encoding="utf-8") as f:
+        return json.load(f)
+
+def _write_chat(doc: dict):
+    with open(_chat_path(doc["chat_id"]), "w", encoding="utf-8") as f:
+        json.dump(doc, f, ensure_ascii=False, indent=2)
+# 1) 채팅방 생성
+@app.post("/api/chat/create")
+def api_chat_create():
+    data = request.get_json() or {}
+    title = (data.get("title") or "").strip()
+    chat_id = _create_chat_file(title)
+    return jsonify({"chat_id": chat_id}), 200
+
+# 2) 채팅방 목록
+@app.get("/api/chat/list")
+def api_chat_list():
+    items = []
+    for fn in os.listdir(CHAT_DIR):
+        if not fn.endswith(".json"): 
+            continue
+        try:
+            with open(os.path.join(CHAT_DIR, fn), "r", encoding="utf-8") as f:
+                c = json.load(f)
+            items.append({"chat_id": c["chat_id"], "title": c.get("title") or c["chat_id"]})
+        except Exception:
+            continue
+    # 최신이 위로
+    items.sort(key=lambda x: x["chat_id"], reverse=True)
+    return jsonify({"chats": items}), 200
+
+# 3) 특정 채팅방 히스토리
+@app.get("/api/chat/history")
+def api_chat_history():
+    chat_id = (request.args.get("chat_id") or "").strip()
+    doc = _read_chat(chat_id)
+    if not doc:
+        return jsonify({"error": "not found"}), 404
+    return jsonify({"chat_id": chat_id, "title": doc.get("title"), "messages": doc.get("messages", [])}), 200
+
+# 4) 메시지 전송(+AI 응답 저장)
+@app.post("/api/chat/send")
+def api_chat_send():
+    data = request.get_json() or {}
+    chat_id = (data.get("chat_id") or "").strip()
+    message = (data.get("message") or "").strip()
+    if not chat_id or not message:
+        return jsonify({"error": "chat_id and message required"}), 400
+
+    doc = _read_chat(chat_id)
+    if not doc:
+        return jsonify({"error": "chat not found"}), 404
+
+    # 사용자 메시지 추가
+    doc["messages"].append({"role": "user", "content": message})
+
+    # AI 응답
+    try:
+        from services.gpt_service import generate_ai_response
+        answer = generate_ai_response(message)
+    except Exception:
+        traceback.print_exc()
+        answer = "AI 응답 생성 중 오류가 발생했습니다. API 키/네트워크를 확인해주세요."
+
+    # AI 메시지 추가
+    doc["messages"].append({"role": "assistant", "content": answer})
+    _write_chat(doc)
+
+    # (옵션) 유사 질문
+    try:
+        from services.similar_service import recommend_similar_questions
+        sims = recommend_similar_questions(message, top_n=3, threshold=0.35, path=LOG_PATH)
+    except Exception:
+        sims = []
+
+    return jsonify({
+        "answer": answer,
+        "messages": doc["messages"],
+        "similar_questions": sims
+    }), 200
+
+
 def _ensure_file(path: str, default):
     os.makedirs(DATA_DIR, exist_ok=True)
     if not os.path.exists(path):
