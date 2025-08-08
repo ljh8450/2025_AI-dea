@@ -178,5 +178,19 @@
     "correct": 2,
     "final_score": 40.0,
     "timestamp": "2025-08-08T02:39:08.551714"
+  },
+  {
+    "mode": "spot",
+    "user_id": "041179af-61b8-4d00-83ea-7d0a89aff2fa",
+    "nickname": "박윤수",
+    "question": "ㅇㅈㅁ",
+    "ai_answer": "AI 응답 생성 중 오류가 발생했습니다: Error code: 401 - {'error': {'message': 'Incorrect API key provided: TYPE_YOU*_KEY. You can find your API key at https://platform.openai.com/account/api-keys.', 'type': 'invalid_request_error', 'param': None, 'code': 'invalid_api_key'}}",
+    "user_spots": [],
+    "final_answer": "ㅁㄴ",
+    "score_spot": 0.0,
+    "score_similarity": 0.0,
+    "final_score": 0.0,
+    "correct": false,
+    "timestamp": "2025-08-08T18:43:00.582452"
   }
 ]

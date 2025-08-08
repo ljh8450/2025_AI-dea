@@ -1,4 +1,3 @@
-// front/src/pages/Chat.jsx
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import Header from '../components/Header';
 import QueryInput from '../components/QueryInput';
@@ -6,6 +5,7 @@ import ChatHistory from '../components/ChatHistory';
 import SimilarList from '../components/SimilarList';
 import SuggestedList from '../components/SuggestedList';
 import ChatListSidebar from '../components/ChatListSidebar';
+import ThemeDock from '../components/ThemeDock';
 import axios from 'axios';
 import { useSearchParams } from 'react-router-dom';
 
@@ -65,23 +65,23 @@ const friendlyAnswer = () =>
 const titleFromMessage = (msg) => {
   const s = (msg || '').trim().replace(/\s+/g, ' ');
   if (!s) return '새 채팅';
-  const split = s.split(/(?<=[.?!])\s|\n/); // 문장 끝/줄바꿈 기준
+  const split = s.split(/(?<=[.?!])\s|\n/);
   const firstSentence = split[0] || s;
   const title = firstSentence.slice(0, 24);
   return title || '새 채팅';
 };
 
 // ── 삭제 확인 모달 ────────────────────────────────────
-const ConfirmDialog = ({ open, title, message, confirmText = '예, 삭제', cancelText = '취소', onConfirm, onCancel }) => {
+const ConfirmDialog = ({ open, title, message, confirmText = '예, 삭제', cancelText = '취소', onConfirm, onCancel, dark=false }) => {
   if (!open) return null;
   return (
     <div className="fixed inset-0 z-40 flex items-center justify-center">
       <div className="absolute inset-0 bg-black/40" onClick={onCancel} />
-      <div className="relative z-50 w-full max-w-md bg-white rounded-xl shadow-lg p-5">
+      <div className={`relative z-50 w-full max-w-md rounded-xl shadow-lg p-5 ${dark ? 'bg-slate-900 text-white border border-white/10' : 'bg-white text-slate-900'}`}>
         <h3 className="text-lg font-semibold mb-2">{title}</h3>
-        <p className="text-sm text-gray-700 mb-4 whitespace-pre-line">{message}</p>
+        <p className={`text-sm mb-4 whitespace-pre-line ${dark ? 'text-slate-200' : 'text-gray-700'}`}>{message}</p>
         <div className="flex justify-end gap-2">
-          <button onClick={onCancel} className="px-4 py-2 rounded border hover:bg-gray-50">{cancelText}</button>
+          <button onClick={onCancel} className={`px-4 py-2 rounded border ${dark ? 'border-white/20 hover:bg-white/5' : 'hover:bg-gray-50'}`}>{cancelText}</button>
           <button onClick={onConfirm} className="px-4 py-2 rounded bg-red-600 text-white hover:bg-red-700">{confirmText}</button>
         </div>
       </div>
@@ -90,16 +90,27 @@ const ConfirmDialog = ({ open, title, message, confirmText = '예, 삭제', canc
 };
 
 // ── 메인 컴포넌트 ─────────────────────────────────────
-const Chat = () => {
+const Chat = ({ variant = 'light', toggleVariant }) => {
+  const isLight = variant === 'light';
+
   const [input, setInput] = useState('');
-  const [messages, setMessages] = useState([]);       // 현재 세션 히스토리
+  const [messages, setMessages] = useState([]);
   const [similar, setSimilar] = useState([]);
   const [nextSuggestions, setNextSuggestions] = useState([]);
-  const [chats, setChats] = useState([]);             // [{chat_id, title}]
-  const [selectedId, setSelectedId] = useState(null); // 현재 선택 세션
-  const [lastFailedMsg, setLastFailedMsg] = useState(null); // 에러 시 직전 질문 저장
 
-  // 삭제 모달 상태
+  // ✅ 제안 스위치 (로컬 스토리지 기억)
+  const [suggestEnabled, setSuggestEnabled] = useState(() => {
+    const v = localStorage.getItem('ui:suggest');
+    return v === null ? true : v === '1';
+  });
+  useEffect(() => {
+    localStorage.setItem('ui:suggest', suggestEnabled ? '1' : '0');
+  }, [suggestEnabled]);
+
+  const [chats, setChats] = useState([]);
+  const [selectedId, setSelectedId] = useState(null);
+  const [lastFailedMsg, setLastFailedMsg] = useState(null);
+
   const [confirmOpen, setConfirmOpen] = useState(false);
   const [pendingDelete, setPendingDelete] = useState(null); // {chatId, title}
 
@@ -130,6 +141,7 @@ const Chat = () => {
       const res = await axios.get(`${API_BASE}/api/chat/history`, { params: { chat_id: chatId } });
       logApi.res('/api/chat/history', res);
       setMessages(Array.isArray(res?.data?.messages) ? res.data.messages : []);
+      // 새 세션 로드시 제안 블록은 초기화
       setSimilar([]);
       setNextSuggestions([]);
     } catch (e) {
@@ -170,13 +182,11 @@ const Chat = () => {
     setLastFailedMsg(null);
   };
 
-  // ── 삭제: 모달 열기 ─────────────────────────────────
+  // ── 삭제: 모달 열기/실행 ────────────────────────────
   const handleAskDeleteChat = (chatId, title) => {
     setPendingDelete({ chatId, title });
     setConfirmOpen(true);
   };
-
-  // ── 삭제: 실제 실행 ────────────────────────────────
   const handleDeleteChat = async () => {
     if (!pendingDelete?.chatId) return;
     try {
@@ -247,12 +257,24 @@ const Chat = () => {
         console.warn('[sanitize] 숨김 처리된 API 오류 응답:', answer);
         setMessages(prev => [...prev, { role: 'assistant', content: friendlyAnswer() }]);
         setLastFailedMsg(msg);
-        return;
+      } else {
+        setMessages(msgs);
+        setLastFailedMsg(null);
       }
 
-      setMessages(msgs);
-      setSimilar(sims);
-      setLastFailedMsg(null);
+      // ✅ 제안 스위치가 켜진 경우에만 표시/요청
+      if (suggestEnabled) {
+        setSimilar(sims || []);
+        try {
+          const nx = await axios.post(`${API_BASE}/api/recommend/next`, { message: msg });
+          setNextSuggestions(Array.isArray(nx?.data?.items) ? nx.data.items : []);
+        } catch (e) {
+          logApi.err('/api/recommend/next', e);
+        }
+      } else {
+        setSimilar([]);
+        setNextSuggestions([]);
+      }
     } catch (err) {
       logApi.err('/api/chat/send', err);
       setMessages(prev => [
@@ -260,6 +282,9 @@ const Chat = () => {
         { role: 'assistant', content: friendlyAnswer() }
       ]);
       setLastFailedMsg(msg);
+      // 에러 시에도 제안은 비움
+      setSimilar([]);
+      setNextSuggestions([]);
     }
   };
 
@@ -270,7 +295,6 @@ const Chat = () => {
 
     let chatIdForSend = selectedId;
 
-    // ✅ 채팅방이 없으면 자동 생성 후 그 방에 전송
     if (!chatIdForSend) {
       try {
         const autoTitle = titleFromMessage(msg);
@@ -285,7 +309,6 @@ const Chat = () => {
       }
     }
 
-    // 낙관적 업데이트
     setMessages(prev => [...prev, { role: 'user', content: msg }]);
     setInput('');
 
@@ -296,7 +319,6 @@ const Chat = () => {
   const handleRetry = async () => {
     if (!lastFailedMsg) return;
 
-    // 재시도 시에도 방이 없으면 자동 생성
     let chatIdForSend = selectedId;
     if (!chatIdForSend) {
       try {
@@ -310,46 +332,71 @@ const Chat = () => {
     await sendMessage(lastFailedMsg, chatIdForSend);
   };
 
-  // ── 레이아웃: sticky 하단 입력바(오른쪽 컬럼 내부) ──
   return (
-    <div className="min-h-screen bg-blue-50">
-      <Header />
+    <div className={`min-h-screen ${isLight ? 'bg-blue-50 text-slate-900' : 'bg-slate-950 text-white'}`}>
+      {/* 테마 토글 */}
+      <ThemeDock variant={variant} onToggle={toggleVariant} />
 
-      {/* 헤더(64px 가정) 아래 전체 높이 */}
+      <Header variant={variant} />
+
       <div className="flex h-[calc(100vh-64px)]">
         {/* 왼쪽 사이드바 */}
-        <ChatListSidebar
-          chats={chats}
-          selectedId={selectedId}
-          onSelect={handleSelectChat}
-          onNew={handleNewChat}
-          onDelete={handleAskDeleteChat}  // 삭제 아이콘 콜백
-        />
+        <div
+          className={`w-64 border-r backdrop-blur ${isLight ? 'bg-white/70 border-slate-200' : 'bg-white/5 border-white/10'}`}
+          style={{ height: 'calc(100vh - 64px)', position: 'sticky', top: 64 }}
+        >
+          <ChatListSidebar
+            chats={chats}
+            selectedId={selectedId}
+            onSelect={handleSelectChat}
+            onNew={handleNewChat}
+            onDelete={handleAskDeleteChat}
+            variant={variant}
+          />
+        </div>
 
         {/* 오른쪽 채팅 영역 */}
         <div className="flex-1 flex flex-col h-full">
           {/* 스크롤 영역 */}
           <div className="flex-1 overflow-y-auto">
             <div className="w-full max-w-3xl mx-auto px-4 py-4">
-              <ChatHistory history={messages} />
-              <SimilarList items={similar} />
-              <SuggestedList title="➡️ 다음에 이렇게 물어보면 좋아요" items={nextSuggestions} />
+              <ChatHistory history={messages} variant={variant} />
+
+              {/* ✅ 스위치가 켜졌을 때만 노출 */}
+              {suggestEnabled && (
+                <>
+                  <SimilarList
+                    items={similar}
+                    variant={variant}
+                    onPick={(q) => setInput(q)}
+                  />
+                  <SuggestedList
+                    title="➡️ 다음에 이렇게 물어보면 좋아요"
+                    items={nextSuggestions}
+                    variant={variant}
+                    onPick={(q) => setInput(q)}
+                  />
+                </>
+              )}
+
               <div ref={bottomRef} />
             </div>
           </div>
 
-          {/* 입력바: 오른쪽 컬럼 내부 sticky 하단 */}
-          <div className="sticky bottom-0 z-20 border-t bg-blue-50/95 backdrop-blur">
+          {/* 입력바 */}
+          <div className={`sticky bottom-0 z-20 border-t backdrop-blur ${isLight ? 'bg-blue-50/95 border-slate-200' : 'bg-slate-950/80 border-white/10'}`}>
             {/* 에러 배너(재시도) */}
             {lastFailedMsg && (
               <div className="max-w-3xl mx-auto px-4 pt-3">
-                <div className="mb-2 p-3 rounded border border-amber-300 bg-amber-50 text-amber-800 text-sm flex items-center justify-between">
+                <div className={`mb-2 p-3 rounded border text-sm flex items-center justify-between ${
+                  isLight ? 'border-amber-300 bg-amber-50 text-amber-800' : 'border-amber-400/40 bg-amber-500/10 text-amber-200'
+                }`}>
                   <div>API 오류가 발생했습니다. 콘솔 확인 후 <b>다시 시도</b>를 눌러주세요.</div>
                   <div className="flex gap-2">
                     <button onClick={handleRetry} className="px-3 py-1 rounded bg-amber-600 text-white hover:bg-amber-700">
                       다시 시도
                     </button>
-                    <button onClick={() => setLastFailedMsg(null)} className="px-3 py-1 rounded border hover:bg-amber-100">
+                    <button onClick={() => setLastFailedMsg(null)} className={`px-3 py-1 rounded border ${isLight ? 'hover:bg-amber-100' : 'border-white/20 hover:bg-white/5'}`}>
                       닫기
                     </button>
                   </div>
@@ -358,13 +405,20 @@ const Chat = () => {
             )}
 
             <div className="max-w-3xl mx-auto px-4 py-3">
-              <QueryInput input={input} setInput={setInput} onSubmit={handleSubmit} />
+              <QueryInput
+                input={input}
+                setInput={setInput}
+                onSubmit={handleSubmit}
+                variant={variant}
+                suggestEnabled={suggestEnabled}
+                onToggleSuggest={() => setSuggestEnabled(v => !v)}
+              />
             </div>
           </div>
         </div>
       </div>
 
-      {/* ✅ 커스텀 삭제 모달 */}
+      {/* 삭제 모달 */}
       <ConfirmDialog
         open={confirmOpen}
         title="대화 삭제"
@@ -373,6 +427,7 @@ const Chat = () => {
         cancelText="취소"
         onConfirm={handleDeleteChat}
         onCancel={() => { setConfirmOpen(false); setPendingDelete(null); }}
+        dark={!isLight}
       />
     </div>
   );
