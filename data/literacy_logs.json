@@ -75,5 +75,108 @@
     "score_similarity": 0.4,
     "correct": true,
     "timestamp": "2025-08-06T05:05:33.190337"
+  },
+  {
+    "mode": "spot",
+    "question": "안녕",
+    "ai_answer": "안녕하세요! 무엇을 도와드릴까요? 고민이 있나요? 함께 해결해보겠습니다.",
+    "user_spots": [
+      {
+        "text": "고민",
+        "reason": "고민"
+      }
+    ],
+    "final_answer": "고민",
+    "score_spot": 0.0,
+    "score_similarity": 9.5,
+    "correct": false,
+    "timestamp": "2025-08-08T01:39:08.822162"
+  },
+  {
+    "mode": "spot",
+    "question": "오늘 날씨는 어때?",
+    "ai_answer": "죄송합니다. 제가 실시간으로 날씨 정보를 제공해 드릴 수는 없습니다. 현재 계신 지역의 기상 정보를 확인하시려면 인터넷 기상 서비스나 기상 앱을 이용해보시는 것을 추천드립니다. 어떤 도움이 필요하신가요? 함께 해결해 드릴 문제가 있나요?",
+    "user_spots": [],
+    "final_answer": "",
+    "score_spot": 0.0,
+    "score_similarity": 0.0,
+    "correct": false,
+    "timestamp": "2025-08-08T01:40:25.565161"
+  },
+  {
+    "mode": "spot",
+    "user_id": "c718e453-9879-43ca-b542-341c620115cb",
+    "nickname": "홍길동",
+    "question": "안녕",
+    "ai_answer": "안녕하세요! 무엇을 도와드릴까요? 궁금한 것이 있나요? 😊",
+    "user_spots": [],
+    "final_answer": "",
+    "score_spot": 0.0,
+    "score_similarity": 0.0,
+    "final_score": 0.0,
+    "correct": false,
+    "timestamp": "2025-08-08T02:38:30.050310"
+  },
+  {
+    "mode": "spot",
+    "user_id": "c718e453-9879-43ca-b542-341c620115cb",
+    "nickname": "홍길동",
+    "question": "안녕",
+    "ai_answer": "안녕하세요! 무엇을 도와드릴까요? 궁금한 것이 있나요? 😊",
+    "user_spots": [],
+    "final_answer": "",
+    "score_spot": 0.0,
+    "score_similarity": 0.0,
+    "final_score": 0.0,
+    "correct": false,
+    "timestamp": "2025-08-08T02:38:30.310640"
+  },
+  {
+    "mode": "spot",
+    "user_id": "c718e453-9879-43ca-b542-341c620115cb",
+    "nickname": "홍길동",
+    "question": "안녕",
+    "ai_answer": "안녕하세요! 무엇을 도와드릴까요? 궁금한 것이 있나요? 😊",
+    "user_spots": [
+      {
+        "text": ".",
+        "reason": "."
+      }
+    ],
+    "final_answer": "",
+    "score_spot": 0.0,
+    "score_similarity": 0.0,
+    "final_score": 0.0,
+    "correct": false,
+    "timestamp": "2025-08-08T02:38:30.366590"
+  },
+  {
+    "mode": "spot",
+    "user_id": "c718e453-9879-43ca-b542-341c620115cb",
+    "nickname": null,
+    "question": "안녕",
+    "ai_answer": "안녕하세요! 무엇을 도와드릴까요? 궁금한 것이 있나요? 😊",
+    "user_spots": [
+      {
+        "text": ".",
+        "reason": "."
+      }
+    ],
+    "final_answer": "",
+    "score_spot": 0.0,
+    "score_similarity": 0.0,
+    "final_score": 0.0,
+    "correct": false,
+    "timestamp": "2025-08-08T02:38:47.390718"
+  },
+  {
+    "mode": "quiz",
+    "user_id": "c718e453-9879-43ca-b542-341c620115cb",
+    "nickname": null,
+    "topic": "안녕",
+    "total": 5,
+    "correct": 2,
+    "final_score": 40.0,
+    "timestamp": "2025-08-08T02:39:08.551714"
   }
 ]

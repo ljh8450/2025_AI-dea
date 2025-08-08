@@ -1,18 +1,48 @@
+// src/components/Header.jsx
 import React from 'react';
-import { Link } from 'react-router-dom';
+import { NavLink } from 'react-router-dom';
 
 const Header = () => {
-  const username = localStorage.getItem('username');
+  const username = localStorage.getItem('username') || '';
+  const userId = localStorage.getItem('onair_user_id') || '';
+
+  const linkBase =
+    'px-3 py-1 rounded transition-colors text-sm md:text-base';
+  const linkClass = ({ isActive }) =>
+    isActive
+      ? `${linkBase} bg-white border text-gray-900`
+      : `${linkBase} bg-gray-100 border text-gray-700 hover:bg-white`;
 
   return (
-    <header className="w-full border-b-2 border-gray-300 bg-white py-4 shadow-sm">
-      <div className="max-w-4xl mx-auto flex justify-between items-center px-4 ">
-        <h1 className="text-xl font-bold text-blue-600">📡 On_AIr</h1>
-        <div className='flex gap-4'>
-          <Link to="/main" className='text-gray-700'>메인</Link>
-          <Link to="/literacy" className='text-gray-700'>리터러시 체험</Link>
+    <header className="bg-blue-100 border-b">
+      <div className="max-w-5xl mx-auto px-4 md:px-6 py-3 flex flex-col gap-2 md:flex-row md:items-center md:justify-between">
+        {/* 로고/타이틀 */}
+        <div className="flex items-center justify-between">
+          <h1 className="text-lg md:text-xl font-bold">
+            On_AIr: 교내 AI 채널
+          </h1>
         </div>
-        <span className="text-gray-700 font-medium">👋 {username || '익명 사용자'}</span>
+
+        {/* 내비게이션 */}
+        <nav className="flex gap-2">
+          <NavLink to="/chat" className={linkClass}>
+            💬 채팅
+          </NavLink>
+          <NavLink to="/trends" className={linkClass}>
+            📈 트렌드
+          </NavLink>
+          <NavLink to="/literacy" className={linkClass}>
+            🧠 리터러시 체험
+          </NavLink>
+        </nav>
+
+        {/* 사용자 표시 */}
+        <div className="text-xs md:text-sm text-gray-700">
+          <span className="mr-2">
+            사용자: <b>{username || '—'}</b>
+          </span>
+          <span className="opacity-60">ID: {userId || '—'}</span>
+        </div>
       </div>
     </header>
   );

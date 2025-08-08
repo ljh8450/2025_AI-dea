@@ -4,6 +4,9 @@ from dotenv import load_dotenv
 
 load_dotenv()  # .env 파일 읽기
 client = OpenAI(api_key=os.environ.get("OPENAI_API_KEY"))
+key = os.environ.get("OPENAI_API_KEY")
+print("현재 경로:", os.getcwd()) 
+print(f"[DEBUG] 불러온 API 키: {repr(key)}")
 
 def generate_ai_response(message):
     try:

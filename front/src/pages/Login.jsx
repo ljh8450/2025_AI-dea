@@ -14,7 +14,7 @@ const Login = () => {
     localStorage.setItem('school', school.trim())
     localStorage.setItem('grade', grade.trim())
     localStorage.setItem('class', klass.trim())
-    navigate('/main')
+    navigate('/chat')
   }
 
   return (
