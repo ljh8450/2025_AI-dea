@@ -182,7 +182,7 @@ const LiteracyLab = () => {
   return (
     <div>
       <Header />
-      <div className="max-w-4xl mx-auto p-6">
+      <div className="max-w-4xl mx-auto p-6" >
         <header className="flex flex-col md:flex-row md:items-end md:justify-between gap-3 mb-4">
           <h1 className="text-2xl font-bold">🧠 AI 리터러시 체험실</h1>
           <div className="flex items-center gap-2 text-sm text-gray-600">
@@ -190,13 +190,12 @@ const LiteracyLab = () => {
             <span className="opacity-60">ID: {userId || '...'}</span>
           </div>
         </header>
-
         <div className="flex gap-3 mb-3">
           {['spot', 'compare', 'quiz'].map((m) => (
             <button
               key={m}
               onClick={() => switchMode(m)}
-              className={`px-4 py-2 rounded ${mode === m ? 'bg-blue-600 text-white' : 'bg-white border'}`}
+              className={`px-4 py-2 rounded ${mode === m ? 'bg-blue-600 text-white' : 'bg-white border text-black'}`}
             >
               {m === 'spot' ? 'Spot the Lie' : m === 'compare' ? 'Model Compare' : 'OX 퀴즈'}
             </button>
@@ -353,55 +352,57 @@ const LiteracyLab = () => {
         )}
 
         {/* Leaderboard */}
-        <section className="mt-8 bg-white p-4 rounded shadow">
-          <div className="flex flex-wrap items-end gap-3">
-            <h3 className="font-semibold mr-auto">🏆 리더보드</h3>
-            <div className="flex items-center gap-2">
-              <label className="text-sm">모드</label>
-              <select className="border rounded px-2 py-1" value={lbMode} onChange={(e) => setLbMode(e.target.value)}>
-                <option value="all">전체</option>
-                <option value="spot">Spot</option>
-                <option value="quiz">Quiz</option>
-              </select>
+        <div className="p-4 text-fixed">
+          <section className="mt-8 bg-white p-4 rounded shadow">
+            <div className="flex flex-wrap items-end gap-3">
+              <h3 className="font-semibold mr-auto">🏆 리더보드</h3>
+              <div className="flex items-center gap-2">
+                <label className="text-sm">모드</label>
+                <select className="border rounded px-2 py-1" value={lbMode} onChange={(e) => setLbMode(e.target.value)}>
+                  <option value="all">전체</option>
+                  <option value="spot">Spot</option>
+                  <option value="quiz">Quiz</option>
+                </select>
+              </div>
+              <div className="flex items-center gap-2">
+                <label className="text-sm">기간</label>
+                <select className="border rounded px-2 py-1" value={lbWindow} onChange={(e) => setLbWindow(e.target.value)}>
+                  <option value="7d">7일</option>
+                  <option value="30d">30일</option>
+                  <option value="all">전체</option>
+                </select>
+              </div>
+              <div className="flex items-center gap-2">
+                <label className="text-sm">Top</label>
+                <input
+                  type="number"
+                  min={1}
+                  className="border rounded px-2 py-1 w-20"
+                  value={lbTop}
+                  onChange={(e) => setLbTop(Number(e.target.value || 10))}
+                />
+              </div>
+              <button className="bg-gray-800 text-white px-3 py-1 rounded" onClick={fetchLeaderboard}>
+                새로고침
+              </button>
             </div>
-            <div className="flex items-center gap-2">
-              <label className="text-sm">기간</label>
-              <select className="border rounded px-2 py-1" value={lbWindow} onChange={(e) => setLbWindow(e.target.value)}>
-                <option value="7d">7일</option>
-                <option value="30d">30일</option>
-                <option value="all">전체</option>
-              </select>
-            </div>
-            <div className="flex items-center gap-2">
-              <label className="text-sm">Top</label>
-              <input
-                type="number"
-                min={1}
-                className="border rounded px-2 py-1 w-20"
-                value={lbTop}
-                onChange={(e) => setLbTop(Number(e.target.value || 10))}
-              />
-            </div>
-            <button className="bg-gray-800 text-white px-3 py-1 rounded" onClick={fetchLeaderboard}>
-              새로고침
-            </button>
-          </div>
 
-          {leaderboard.length === 0 ? (
-            <p className="text-sm text-gray-500 mt-3">아직 랭킹 데이터가 없어요.</p>
-          ) : (
-            <ol className="mt-3">
-              {leaderboard.map((r, i) => (
-                <li key={i} className="flex justify-between border-b py-1">
-                  <span>{i + 1}. {r.display_name || r.user_id}</span>
-                  <span>
-                    {r.avg_score}점 <span className="text-gray-400 text-xs">({r.plays}회)</span>
-                  </span>
-                </li>
-              ))}
-            </ol>
-          )}
-        </section>
+            {leaderboard.length === 0 ? (
+              <p className="text-sm text-gray-500 mt-3">아직 랭킹 데이터가 없어요.</p>
+            ) : (
+              <ol className="mt-3">
+                {leaderboard.map((r, i) => (
+                  <li key={i} className="flex justify-between border-b py-1">
+                    <span>{i + 1}. {r.display_name || r.user_id}</span>
+                    <span>
+                      {r.avg_score}점 <span className="text-gray-400 text-xs">({r.plays}회)</span>
+                    </span>
+                  </li>
+                ))}
+              </ol>
+            )}
+          </section>
+        </div>
       </div>
     </div>
   );

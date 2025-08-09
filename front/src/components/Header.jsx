@@ -6,7 +6,6 @@ const Header = () => {
   const username = localStorage.getItem('username') || '';
   const userId = localStorage.getItem('onair_user_id') || '';
 
-  // 🔹 배경은 --bg-dark (원래 bg의 5%만 더 진함), 보더는 --primary-20
   const shellCls = 'backdrop-blur border-b';
   const shellStyle = {
     backgroundColor: 'var(--bg-dark)',
@@ -27,8 +26,8 @@ const Header = () => {
       <div className="max-w-5xl mx-auto px-4 md:px-6 py-3 flex flex-col gap-2 md:flex-row md:items-center md:justify-between">
         {/* 로고/타이틀 */}
         <div className="flex items-center justify-between">
-          <h1 className="text-lg md:text-xl font-bold" style={{ color: 'var(--primary)' }}>
-            On_AIr: 교내 AI 채널
+          <h1 className="text-lg md:text-xl font-bold" style={{ color: 'var(--header-title)' }}>
+            On_AIr
           </h1>
         </div>
 

@@ -16,6 +16,7 @@
     --primary: #603ae7;
     --primary-20: color-mix(in srgb, var(--primary) 20%, transparent);
     --card-solid: #ffffff;
+    --header-title: var(--primary);
   }
 
   /* 겨울 테마 */
@@ -42,8 +43,9 @@
   :root[data-variant="dark"] {
     --bg: #0f172a;
     --bg-dark: color-mix(in srgb, var(--bg) 95%, white); /* 🔹 다크는 5% 밝게 */
+    --header-title: #ffffff !important;
     --fg: #ffffff;
-    --card: rgba(255, 255, 255, 0.05);
+    --card: rgba(255, 255, 255, 0.781);
   }
 }
 
@@ -90,7 +92,7 @@
   }
 
   /* ✅ 계절 + 모드별 테두리/포커스 색상 */
-  /* 겨울 */
+  /* 봄으로 함 */
   [data-theme="winter"][data-variant="light"] .field {
     @apply border-blue-300 focus:border-blue-500 focus:ring-blue-300;
   }
@@ -106,7 +108,7 @@
     @apply border-emerald-400/50 focus:border-emerald-300 focus:ring-emerald-400;
   }
   :root[data-theme="winter"] {
-    --bg: #e8f4ff; /* 연한 파랑 느낌 */
+    --bg: #d1f7cc; 
     --fg: #1e293b;
     --card: rgba(255, 255, 255, 0.7);
     --primary: #36b3c9;
@@ -115,10 +117,14 @@
 
   /* 여름 테마 */
   :root[data-theme="summer"] {
-    --bg: #fffbe6; /* 연한 노랑/베이지 */
+    --bg: #fffbe6;
     --fg: #1e293b;
     --card: rgba(255, 255, 255, 0.7);
     --primary: #f5de0b;
 	--primary-20: color-mix(in srgb, var(--primary) 20%, transparent);
 }
+}
+
+.text-fixed {
+  color: #111 !important;
 }
