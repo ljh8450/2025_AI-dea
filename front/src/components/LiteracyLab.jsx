@@ -180,7 +180,7 @@ const LiteracyLab = () => {
   };
 
   return (
-    <div className="min-h-screen bg-blue-50">
+    <div>
       <Header />
       <div className="max-w-4xl mx-auto p-6">
         <header className="flex flex-col md:flex-row md:items-end md:justify-between gap-3 mb-4">

@@ -1,17 +1,124 @@
-body {
-  margin: 0;
-  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen',
-    'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue',
-    sans-serif;
-  -webkit-font-smoothing: antialiased;
-  -moz-osx-font-smoothing: grayscale;
-}
-
-code {
-  font-family: source-code-pro, Menlo, Monaco, Consolas, 'Courier New',
-    monospace;
-}
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
 
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+
+@layer base {
+  /* ===== 기본값: 라이트 ===== */
+  :root {
+    --bg: #f0f6ff;
+    --bg-dark: color-mix(in srgb, var(--bg) 95%, black); /* 🔹 원래 배경보다 5%만 어둡게 */
+    --fg: #1e293b;
+    --card: rgba(255, 255, 255, 0.7);
+    --primary: #603ae7;
+    --primary-20: color-mix(in srgb, var(--primary) 20%, transparent);
+    --card-solid: #ffffff;
+  }
+
+  /* 겨울 테마 */
+  :root[data-theme="winter"] {
+    --bg: #fff8eb;
+    --bg-dark: color-mix(in srgb, var(--bg) 95%, black); /* 🔹 라이트 계열은 black로 살짝 더 어둡게 */
+    --fg: #1e293b;
+    --card: rgba(255, 255, 255, 0.7);
+    --primary: #36b3c9;
+    --primary-20: color-mix(in srgb, var(--primary) 20%, transparent);
+  }
+
+  /* 여름 테마 */
+  :root[data-theme="summer"] {
+    --bg: #fff8eb;
+    --bg-dark: color-mix(in srgb, var(--bg) 95%, black);
+    --fg: #1e293b;
+    --card: rgba(255, 255, 255, 0.7);
+    --primary: #f5de0b;
+    --primary-20: color-mix(in srgb, var(--primary) 20%, transparent);
+  }
+
+  /* 다크 모드 */
+  :root[data-variant="dark"] {
+    --bg: #0f172a;
+    --bg-dark: color-mix(in srgb, var(--bg) 95%, white); /* 🔹 다크는 5% 밝게 */
+    --fg: #ffffff;
+    --card: rgba(255, 255, 255, 0.05);
+  }
+}
+
+/* 아래 @layer components 등 기존 내용은 그대로 두세요 */
+
+
+@layer components {
+  .app-bg {
+    @apply bg-[var(--bg)] text-[var(--fg)];
+  }
+
+  .card {
+    @apply rounded-3xl border shadow-xl p-10 backdrop-blur-sm bg-[var(--card)];
+    border-color: var(--primary-20); /* 슬래시 투명도 대신 CSS 변수로 해결 */
+  }
+
+  .title {
+    @apply text-5xl font-extrabold mb-4;
+    color: var(--primary);
+  }
+
+  .muted {
+    @apply text-lg mb-10;
+    color: color-mix(in srgb, var(--fg) 70%, transparent);
+  }
+
+  .btn-primary {
+    @apply inline-block px-8 py-3 rounded-full text-lg font-semibold shadow transition text-white;
+    background-color: var(--primary);
+  }
+  .btn-primary:hover {
+    filter: brightness(0.96);
+  }
+
+  .card-solid {
+    background: var(--card-solid, #fff);
+    backdrop-filter: none;
+  }
+
+  .field {
+    @apply w-full rounded-lg border p-3 outline-none focus:ring-2;
+    background-color: var(--card);
+    color: var(--fg);
+  }
+
+  /* ✅ 계절 + 모드별 테두리/포커스 색상 */
+  /* 겨울 */
+  [data-theme="winter"][data-variant="light"] .field {
+    @apply border-blue-300 focus:border-blue-500 focus:ring-blue-300;
+  }
+  [data-theme="winter"][data-variant="dark"] .field {
+    @apply border-sky-400/50 focus:border-sky-300 focus:ring-sky-400;
+  }
+
+  /* 여름 */
+  [data-theme="summer"][data-variant="light"] .field {
+    @apply border-amber-300 focus:border-amber-500 focus:ring-amber-300;
+  }
+  [data-theme="summer"][data-variant="dark"] .field {
+    @apply border-emerald-400/50 focus:border-emerald-300 focus:ring-emerald-400;
+  }
+  :root[data-theme="winter"] {
+    --bg: #e8f4ff; /* 연한 파랑 느낌 */
+    --fg: #1e293b;
+    --card: rgba(255, 255, 255, 0.7);
+    --primary: #36b3c9;
+    --primary-20: color-mix(in srgb, var(--primary) 20%, transparent);
+  }
+
+  /* 여름 테마 */
+  :root[data-theme="summer"] {
+    --bg: #fffbe6; /* 연한 노랑/베이지 */
+    --fg: #1e293b;
+    --card: rgba(255, 255, 255, 0.7);
+    --primary: #f5de0b;
+	--primary-20: color-mix(in srgb, var(--primary) 20%, transparent);
+}
+}

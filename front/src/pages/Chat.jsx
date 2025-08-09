@@ -333,7 +333,7 @@ const Chat = ({ variant = 'light', toggleVariant }) => {
   };
 
   return (
-    <div className={`min-h-screen ${isLight ? 'bg-blue-50 text-slate-900' : 'bg-slate-950 text-white'}`}>
+    <div className={`min-h-screen`}>
       {/* 테마 토글 */}
       <ThemeDock variant={variant} onToggle={toggleVariant} />
 

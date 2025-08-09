@@ -1,36 +1,33 @@
+// front/src/components/Header.jsx
 import React from 'react';
 import { NavLink } from 'react-router-dom';
 
-const Header = ({ variant = 'light' }) => {
-  const isLight = variant === 'light';
+const Header = () => {
   const username = localStorage.getItem('username') || '';
   const userId = localStorage.getItem('onair_user_id') || '';
 
-  const shellCls = isLight
-    ? 'bg-blue-100/80 border-b border-slate-200'
-    : 'bg-slate-900/70 border-b border-white/10 backdrop-blur';
-
-  // NavLink 스타일: 활성/비활성 + 라이트/다크 분기
-  const base = 'px-3 py-1 rounded transition-colors text-sm md:text-base border';
-  const linkClass = ({ isActive }) => {
-    if (isActive) {
-      return isLight
-        ? `${base} bg-white border-slate-200 text-slate-900`
-        : `${base} bg-white/10 border-white/10 text-white`;
-    }
-    return isLight
-      ? `${base} bg-blue-50 hover:bg-white border-slate-200 text-slate-700`
-      : `${base} bg-white/5 hover:bg-white/10 border-white/10 text-slate-200`;
+  // 🔹 배경은 --bg-dark (원래 bg의 5%만 더 진함), 보더는 --primary-20
+  const shellCls = 'backdrop-blur border-b';
+  const shellStyle = {
+    backgroundColor: 'var(--bg-dark)',
+    borderColor: 'var(--primary-20)',
   };
 
-  const userTextCls = isLight ? 'text-gray-700' : 'text-slate-300';
+  const base = 'px-3 py-1 rounded transition-colors text-sm md:text-base border';
+
+  const linkClass = ({ isActive }) => {
+    if (isActive) {
+      return `${base} bg-[var(--primary)] text-white border-[var(--primary-20)]`;
+    }
+    return `${base} bg-[var(--card)] text-[var(--fg)] border-[var(--primary-20)] hover:bg-[color-mix(in_srgb,var(--primary)_18%,transparent)]`;
+  };
 
   return (
-    <header className={shellCls}>
+    <header className={shellCls} style={shellStyle}>
       <div className="max-w-5xl mx-auto px-4 md:px-6 py-3 flex flex-col gap-2 md:flex-row md:items-center md:justify-between">
         {/* 로고/타이틀 */}
         <div className="flex items-center justify-between">
-          <h1 className={`text-lg md:text-xl font-bold ${isLight ? 'text-slate-900' : 'text-white'}`}>
+          <h1 className="text-lg md:text-xl font-bold" style={{ color: 'var(--primary)' }}>
             On_AIr: 교내 AI 채널
           </h1>
         </div>
@@ -49,7 +46,7 @@ const Header = ({ variant = 'light' }) => {
         </nav>
 
         {/* 사용자 표시 */}
-        <div className={`text-xs md:text-sm ${userTextCls}`}>
+        <div className="text-xs md:text-sm" style={{ color: 'var(--fg)' }}>
           <span className="mr-2">
             사용자: <b>{username || '—'}</b>
           </span>
