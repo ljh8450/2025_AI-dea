@@ -32,22 +32,22 @@ const Login = ({ variant = 'light', toggleVariant }) => {
       <ThemeDock variant={variant} onToggle={toggleVariant} />
 
       <div className="relative z-10 flex min-h-screen items-center justify-center p-6">
-        <div className="w-full max-w-md card card-solid">
+        <div className="w-full max-w-md card card-solid text-fixed">
           <h1 className="text-2xl font-bold mb-6 text-center">로그인</h1>
           <form onSubmit={handleLogin} className="space-y-4">
             <div>
-              <label className="block mb-1 text-sm muted">이름</label>
+              <label className="block mb-1 text-sm muted text-fixed">이름</label>
               <input
-                className="field"
+                className="field text-fixed"
                 placeholder="이름을 입력하세요"
                 value={username}
                 onChange={(e) => setUsername(e.target.value)}
               />
             </div>
             <div>
-              <label className="block mb-1 text-sm muted">학교</label>
+              <label className="block mb-1 text-sm muted text-fixed">학교</label>
               <input
-                className="field"
+                className="field text-fixed"
                 placeholder="학교명"
                 value={school}
                 onChange={(e) => setSchool(e.target.value)}
@@ -55,18 +55,18 @@ const Login = ({ variant = 'light', toggleVariant }) => {
             </div>
             <div className="flex gap-3">
               <div className="flex-1">
-                <label className="block mb-1 text-sm muted">학년</label>
+                <label className="block mb-1 text-sm muted text-fixed">학년</label>
                 <input
-                  className="field"
+                  className="field text-fixed"
                   placeholder="예: 2"
                   value={grade}
                   onChange={(e) => setGrade(e.target.value)}
                 />
               </div>
               <div className="flex-1">
-                <label className="block mb-1 text-sm muted">반</label>
+                <label className="block mb-1 text-sm muted text-fixed">반</label>
                 <input
-                  className="field"
+                  className="field text-fixed"
                   placeholder="예: 3"
                   value={klass}
                   onChange={(e) => setKlass(e.target.value)}

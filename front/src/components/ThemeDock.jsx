@@ -5,6 +5,11 @@ const ThemeDock = ({ variant, onToggle }) => (
     <button
       onClick={onToggle}
       className="rounded-full px-4 py-2 shadow bg-white/80 backdrop-blur hover:bg-white text-sm font-medium"
+      style={{
+        backgroundColor: 'var(--bg-dark)',
+        color: 'var(--fg)',
+        borderColor: 'var(--primary-20)',
+      }}
       title="라이트/다크 토글"
     >
       {variant === 'light' ? '🌞 Light' : '🌙 Dark'}

@@ -8,7 +8,7 @@ import Home from './pages/Home';
 import Login from './pages/Login';
 import RootLayout from './components/RootLayout';
 
-const SEASON = 'summer';
+const SEASON = 'base';
 
 function App() {
   const [variant, setVariant] = useState(localStorage.getItem('ui:variant') || 'light');

@@ -1,9 +1,18 @@
 // front/src/components/ChatListSidebar.jsx
 import React from 'react'
 
-const ChatListSidebar = ({ chats, selectedId, onSelect, onNew, onDelete }) => {
+const ChatListSidebar = ({ chats, selectedId, onSelect, onNew, onDelete, variant='light' }) => {
+  const isLight = variant === 'light';
+
   return (
-    <aside className="w-64 bg-gray-900 text-gray-100 h-full p-3 flex flex-col">
+    <aside
+      className={`w-64 h-full p-3 flex flex-col border-r backdrop-blur`}
+      style={{
+        backgroundColor: 'var(--bg-dark)',
+        color: 'var(--fg)',
+        borderColor: 'var(--primary-20)',
+      }}
+    >
       <button
         className="mb-3 bg-emerald-600 hover:bg-emerald-700 rounded px-3 py-2"
         onClick={onNew}
@@ -16,7 +25,7 @@ const ChatListSidebar = ({ chats, selectedId, onSelect, onNew, onDelete }) => {
           <div
             key={c.chat_id}
             className={`group flex items-center gap-2 px-3 py-2 rounded cursor-pointer truncate ${
-              selectedId === c.chat_id ? 'bg-gray-700' : 'hover:bg-gray-800'
+              selectedId === c.chat_id ? 'bg-gray-500' : 'hover:bg-gray-400'
             }`}
             onClick={() => onSelect(c.chat_id)}
             title={c.title}

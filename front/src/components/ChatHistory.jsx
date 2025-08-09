@@ -10,7 +10,7 @@ const ChatHistory = ({ history = [], variant = 'light' }) => {
       {history.map((m, i) => {
         const mine = m.role === 'user';
         const base = mine
-          ? (isLight ? 'bg-white text-right ml-auto border border-slate-200' : 'bg-sky-900/30 text-right ml-auto border border-white/10')
+          ? (isLight ? 'bg-blue-200 text-right ml-auto border border-slate-200' : 'bg-sky-900/30 text-right ml-auto border border-white/10')
           : (isLight ? 'bg-blue-100/70 text-left mr-auto' : 'bg-white/10 text-left mr-auto');
         return (
           <div
