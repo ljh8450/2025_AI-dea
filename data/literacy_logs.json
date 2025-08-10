@@ -192,5 +192,25 @@
     "final_score": 0.0,
     "correct": false,
     "timestamp": "2025-08-08T18:43:00.582452"
+  },
+  {
+    "mode": "quiz",
+    "user_id": "aa219bd1-e5f0-4828-9b6d-c6e1ce685943",
+    "nickname": "홍길동",
+    "topic": "안녕",
+    "total": 3,
+    "correct": 1,
+    "final_score": 33.3,
+    "timestamp": "2025-08-10T01:29:14.327001"
+  },
+  {
+    "mode": "quiz",
+    "user_id": "646e8644-32ba-489f-8da0-fd9db5ca5f01",
+    "nickname": "이정환",
+    "topic": "안녕, 리터러시에 대해 알려줘",
+    "total": 5,
+    "correct": 5,
+    "final_score": 100.0,
+    "timestamp": "2025-08-10T03:14:36.861724"
   }
 ]
